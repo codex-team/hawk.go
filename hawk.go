@@ -9,6 +9,8 @@ import (
 	"net/url"
 )
 
+const defaultUrl = "https://hawk.so/catcher/golang"
+
 type Catcher struct {
 	url string
 	AccessToken AccessToken
@@ -33,7 +35,7 @@ func (catcher *Catcher) SetEndpoint (hawkUrl string) error {
 }
 
 func New(accessToken AccessToken) (*Catcher, error) {
-	catcher := &Catcher{}
+	catcher := &Catcher{defaultUrl, AccessToken{""}}
 	err := checkAccessToken(accessToken)
 	if err != nil {
 		return nil, err
@@ -42,7 +44,15 @@ func New(accessToken AccessToken) (*Catcher, error) {
 	return catcher, nil
 }
 
-func Init(accessToken string, hawkUrl string) (*Catcher, error) {
+func Init(accessToken string) (*Catcher, error) {
+	catcher, err := New(AccessToken{accessToken})
+	if err != nil {
+		return nil, err
+	}
+	return catcher, nil
+}
+
+func InitWithUrl(accessToken string, hawkUrl string) (*Catcher, error) {
 	catcher, err := New(AccessToken{accessToken})
 	if err != nil {
 		return catcher, err

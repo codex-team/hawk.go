@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	catcher, err := hawk.Init("token", "http://localhost:3000/catcher")
+	catcher, err := hawk.InitWithUrl("token", "http://localhost:3000/catcher")
 	if err != nil {
 		panic(err)
 	}
