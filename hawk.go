@@ -1,97 +1,85 @@
 package hawk
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 )
 
-const defaultUrl = "https://hawk.so/catcher/golang"
+const (
+	// DefaultURL is the default Hawk URL to send errors.
+	DefaultURL = "https://hawk.so/catcher/golang"
+	// CatcherType is the type of this Catcher.
+	CatcherType = "errors/golang"
+	// DefaultMaxBulkSize is default max amount of errors that can be sent at once.
+	DefaultMaxBulkSize = 64
+	// DefaultMaxInterval is default max time interval to wait for errors before sending them.
+	DefaultMaxInterval = 5 * time.Minute
+)
 
+// ErrEmptyURL is returned if an empty URL was provided in SetURL func.
+var ErrEmptyURL = errors.New("empty Hawk URL")
+
+// Catcher collects information about errors and sends them to Hawk.
 type Catcher struct {
-	url string
-	AccessToken AccessToken
+	// hawkURL is the address to send errors.
+	hawkURL string
+	// accessToken is the Hawk access token.
+	accessToken string
+	// maxBulkSize is max amount of errors that can be sent at once.
+	MaxBulkSize int
+	// maxInterval is max time interval to wait for errors before sending them.
+	MaxInterval time.Duration
+	// lastSendTime is the time when last report was sent.
+	lastSendTime time.Time
+	// errBuffer stores last N errors for MaxInterval time, N <= MaxBulkSize.
+	errBuffer []ErrorReport
+	// HTTP client
+	client *http.Client
 }
 
-type AccessToken struct {
-	token string
-}
-
-func (catcher *Catcher) SetEndpoint (hawkUrl string) error {
-	if hawkUrl == "" {
-		return errors.New("empty catcher URL")
-	}
-
-	uri, err := url.Parse(hawkUrl)
-	if err != nil {
-		return err
-	}
-
-	catcher.url = uri.String()
-	return nil
-}
-
-func New(accessToken AccessToken) (*Catcher, error) {
-	catcher := &Catcher{defaultUrl, AccessToken{""}}
-	err := checkAccessToken(accessToken)
+// New returns new Catcher instance with provided access token and default URL.
+func New(token string) (*Catcher, error) {
+	err := checkAccessToken(token)
 	if err != nil {
 		return nil, err
 	}
-	catcher.AccessToken = accessToken
+
+	catcher := &Catcher{
+		hawkURL:      DefaultURL,
+		accessToken:  token,
+		MaxBulkSize:  DefaultMaxBulkSize,
+		MaxInterval:  DefaultMaxInterval,
+		lastSendTime: time.Now(),
+		errBuffer:    []ErrorReport{},
+		client:       &http.Client{},
+	}
+
 	return catcher, nil
 }
 
-func Init(accessToken string) (*Catcher, error) {
-	catcher, err := New(AccessToken{accessToken})
-	if err != nil {
-		return nil, err
-	}
-	return catcher, nil
-}
-
-func InitWithUrl(accessToken string, hawkUrl string) (*Catcher, error) {
-	catcher, err := New(AccessToken{accessToken})
-	if err != nil {
-		return catcher, err
-	}
-	err = catcher.SetEndpoint(hawkUrl)
-	if err != nil {
-		return catcher, err
-	}
-	return catcher, nil
-}
-
-func checkAccessToken(accessToken AccessToken) error {
+// checkAccessToken validates access token.
+func checkAccessToken(accessToken string) error {
 	return nil
 }
 
-func (catcher *Catcher) catch(error_data ErrorData) error {
-	client := &http.Client{
+// SetURL sets hawkURL field for Catcher instance.
+func (c *Catcher) SetURL(hawkURL string) error {
+	if hawkURL == "" {
+		return ErrEmptyURL
 	}
 
-	error_bytes, err := json.Marshal(error_data)
+	_, err := url.Parse(hawkURL)
 	if err != nil {
 		return err
 	}
+	c.hawkURL = hawkURL
 
-	message := Request{catcher.AccessToken.token, error_bytes, "errors/golang", Sender{"127.0.0.1"}}
-	message_bytes, err := json.Marshal(message)
-	if err != nil {
-		return err
-	}
-
-	_, err = client.Post(catcher.url, "application/json", bytes.NewBuffer(message_bytes))
-
-	return err
+	return nil
 }
 
-func (catcher *Catcher) CatchWithCode(error_data error, code int) error {
-	return catcher.catch(ErrorData{code, fmt.Sprintf("%s", error_data)})
-}
-
-func (catcher *Catcher) Catch(error_data error) error {
-	return catcher.catch(ErrorData{0, fmt.Sprintf("%s", error_data)})
+// clearBuffer resets stored errors.
+func (c *Catcher) clearBuffer() {
+	c.errBuffer = c.errBuffer[:0]
 }

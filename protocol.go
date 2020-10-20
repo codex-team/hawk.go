@@ -1,18 +1,45 @@
 package hawk
 
-import "encoding/json"
-
-type ErrorData struct {
-	Code int `json:"code"`
-	Message string `json:"message"`
-}
-type Sender struct {
-	Ip string `json:"ip"`
-}
-
-type Request struct {
+// ErrorReport is a report about an error that is sent to Hawk.
+type ErrorReport struct {
+	// Token is the Hawk access token.
 	Token string `json:"token"`
-	Payload json.RawMessage `json:"payload"`
+	// CatcherType is the type of this Catcher.
 	CatcherType string `json:"catcher_type"`
-	Sender Sender `json:"sender"`
+	// Payload is the information about the error.
+	Payload Payload `json:"payload"`
+}
+
+// Payload is the information about the error.
+type Payload struct {
+	// Title is the error name.
+	Title string `json:"title"`
+	// Timestamp represents time when the error was caught by the Catcher.
+	Timestamp string `json:"timestamp"`
+	// Severity is the error's severity level.
+	Severity int `json:"severity,omitempty"`
+	// Backtrace contains information about the function calls that caused the
+	// error.
+	Backtrace []Backtrace `json:"backtrace"`
+}
+
+// Backtrace contains information about the function calls that caused the
+// error.
+type Backtrace struct {
+	// File is the path to file where the error was caught.
+	File string `json:"file"`
+	// Line is the number of line which caused the error.
+	Line int `json:"line"`
+	// SourceCode contains the line which caused the error, the previous and the
+	// next lines.
+	SourceCode [3]SourceCode `json:"source_code,omitempty"`
+}
+
+// SourceCode contains the line which caused the error, the previous and the
+// next lines.
+type SourceCode struct {
+	// LineNumber is the number of line which caused the error.
+	LineNumber int `json:"line_number"`
+	// Content is the line itself.
+	Content string `json:"content"`
 }

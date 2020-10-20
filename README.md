@@ -13,13 +13,15 @@ go get https://github.com/codex-team/hawk.go
 ## Usage
 
 ```golang
+package main
+
 import(
-	"github.com/codex-team/capella.go"
+	"github.com/codex-team/hawk.go"
 )
 
 func main() {
     // initialize Hawk catcher
-    catcher, err := hawk.Init("abcd1234-1234-abcd-1234-123456abcdef")
+    catcher, err := hawk.New("abcd1234-1234-abcd-1234-123456abcdef")
     if err != nil {
         panic(err)
     }
