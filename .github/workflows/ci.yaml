@@ -12,3 +12,5 @@ jobs:
           go-version: '^1.15'
       - name: Unit tests
         run: make ut
+      - name: Integration tests
+        run: make
