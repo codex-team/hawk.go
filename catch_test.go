@@ -18,7 +18,7 @@ func TestBacktrace(t *testing.T) {
 			t.Fatalf("cannot open file %s: %s", bt[0].File, err.Error())
 		}
 		defer file.Close()
-		err = bt[0].readSourceCode(file)
+		bt[0].SourceCode, err = readSourceCode(file, bt[0].Line)
 		if err != nil {
 			t.Fatalf("failed to read source code: %s", err.Error())
 		}
@@ -35,15 +35,15 @@ func TestBacktrace(t *testing.T) {
 			SourceCode: [3]SourceCode{
 				{
 					LineNumber: targetLine - 1,
-					Content:    "\tt.Run(\"simple case\", func(t *testing.T) {",
+					Content:    "t.Run(\"simple case\", func(t *testing.T) {",
 				},
 				{
 					LineNumber: targetLine,
-					Content:    "\t\tbt := getBacktrace(0)",
+					Content:    "bt := getBacktrace(0)",
 				},
 				{
 					LineNumber: targetLine + 1,
-					Content:    "\t\tif len(bt) == 0 {",
+					Content:    "if len(bt) == 0 {",
 				},
 			},
 		}

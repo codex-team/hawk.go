@@ -4,23 +4,34 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
 
 // send sends errors to Hawk.
 func (c *Catcher) send() error {
-	repBytes, err := json.Marshal(c.errBuffer)
+	reqBytes, err := json.Marshal(c.errBuffer)
 	if err != nil {
 		return err
 	}
-	resp, err := c.client.Post(c.hawkURL, "application/json", bytes.NewBuffer(repBytes))
-	if err != nil {
-		return err
 
+	req, err := http.NewRequest(http.MethodPost, c.hawkURL, bytes.NewBuffer(reqBytes))
+	req.Close = true
+
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send errors: %w", err)
 	}
+	defer resp.Body.Close()
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read body: %w", err)
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("status code: %d", resp.StatusCode)
+		return fmt.Errorf("\n\tstatus code: %d,\n\t body: %s\n\t payload: %s", resp.StatusCode, string(respBytes), string(reqBytes))
 	}
 
 	return nil

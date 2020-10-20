@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -43,44 +44,45 @@ func getBacktrace(toSkip int) []Backtrace {
 }
 
 // readSourceCode reads the lines of code that caused the error.
-func (b *Backtrace) readSourceCode(reader io.Reader) error {
+func readSourceCode(reader io.Reader, targetLine int) ([3]SourceCode, error) {
+	var res [3]SourceCode
 	lines := make([]string, 3)
 	scanner := bufio.NewScanner(reader)
 	i := 1
 	for scanner.Scan() {
 		switch i {
-		case b.Line - 1:
+		case targetLine - 1:
 			lines[0] = scanner.Text()
-		case b.Line:
+		case targetLine:
 			lines[1] = scanner.Text()
-		case b.Line + 1:
+		case targetLine + 1:
 			lines[2] = scanner.Text()
 		}
-		if i == b.Line+1 {
+		if i == targetLine+1 {
 			break
 		}
 		i++
 	}
 	if err := scanner.Err(); err != nil {
-		return err
+		return res, err
 	}
 
-	b.SourceCode = [3]SourceCode{
+	res = [3]SourceCode{
 		{
-			LineNumber: b.Line - 1,
-			Content:    lines[0],
+			LineNumber: targetLine - 1,
+			Content:    strings.Trim(lines[0], "\t"),
 		},
 		{
-			LineNumber: b.Line,
-			Content:    lines[1],
+			LineNumber: targetLine,
+			Content:    strings.Trim(lines[1], "\t"),
 		},
 		{
-			LineNumber: b.Line + 1,
-			Content:    lines[2],
+			LineNumber: targetLine + 1,
+			Content:    strings.Trim(lines[2], "\t"),
 		},
 	}
 
-	return nil
+	return res, nil
 }
 
 // Catch creates ErrorReport for provided error, collects backtrace and sends
@@ -95,39 +97,29 @@ func (c *Catcher) Catch(err error) error {
 		CatcherType: CatcherType,
 		Payload: Payload{
 			Title:     err.Error(),
-			Timestamp: time.Now().String(),
+			Timestamp: strconv.Itoa(int(time.Now().Unix())),
 		},
 	}
 
-	backtraceList := getBacktrace(1)
-	if len(backtraceList) == 0 {
+	report.Payload.Backtrace = getBacktrace(1)
+	if len(report.Payload.Backtrace) == 0 {
 		return ErrEmptyBacktrace
 	}
 
-	file, err := os.Open(backtraceList[0].File)
-	if err != nil {
-		log.Printf("failed to open file %s: %s", backtraceList[0].File, err.Error())
-	}
-
-	for i, bt := range backtraceList {
-		if (i != 0) && (bt.File != backtraceList[i-1].File) {
-			file.Close()
-			file, err = os.Open(bt.File)
-			if err != nil {
-				log.Printf("failed to open file %s: %s", bt.File, err.Error())
-				continue
-			}
+	for i, bt := range report.Payload.Backtrace {
+		file, err := os.Open(bt.File)
+		if err != nil {
+			log.Printf("failed to open file %s: %s", bt.File, err.Error())
+			continue
 		}
 
-		err = bt.readSourceCode(file)
+		report.Payload.Backtrace[i].SourceCode, err = readSourceCode(file, bt.Line)
 		if err != nil {
 			log.Printf("failed to read file %s: %s", bt.File, err.Error())
 			continue
 		}
+		file.Close()
 	}
-	file.Close()
-
-	report.Payload.Backtrace = backtraceList
 
 	return c.proceedReport(&report)
 }

@@ -5,7 +5,7 @@ type ErrorReport struct {
 	// Token is the Hawk access token.
 	Token string `json:"token"`
 	// CatcherType is the type of this Catcher.
-	CatcherType string `json:"catcher_type"`
+	CatcherType string `json:"catcherType"`
 	// Payload is the information about the error.
 	Payload Payload `json:"payload"`
 }
@@ -17,7 +17,7 @@ type Payload struct {
 	// Timestamp represents time when the error was caught by the Catcher.
 	Timestamp string `json:"timestamp"`
 	// Severity is the error's severity level.
-	Severity int `json:"severity,omitempty"`
+	Severity int `json:"level,omitempty"`
 	// Backtrace contains information about the function calls that caused the
 	// error.
 	Backtrace []Backtrace `json:"backtrace"`
@@ -32,14 +32,14 @@ type Backtrace struct {
 	Line int `json:"line"`
 	// SourceCode contains the line which caused the error, the previous and the
 	// next lines.
-	SourceCode [3]SourceCode `json:"source_code,omitempty"`
+	SourceCode [3]SourceCode `json:"sourceCode,omitempty"`
 }
 
 // SourceCode contains the line which caused the error, the previous and the
 // next lines.
 type SourceCode struct {
 	// LineNumber is the number of line which caused the error.
-	LineNumber int `json:"line_number"`
+	LineNumber int `json:"line"`
 	// Content is the line itself.
 	Content string `json:"content"`
 }
