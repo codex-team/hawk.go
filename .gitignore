@@ -1,0 +1,4 @@
+*.swp
+go.sum
+tests/*
+.idea*
