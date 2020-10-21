@@ -18,7 +18,9 @@ func (c *Catcher) send() error {
 		}
 
 		req, err := http.NewRequest(http.MethodPost, c.hawkURL, bytes.NewBuffer(reqBytes))
-		req.Close = true
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err)
+		}
 
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := c.client.Do(req)

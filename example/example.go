@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -20,7 +19,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = catcher.Catch(errors.New("Test exception"))
+	err = catcher.Catch(fmt.Errorf("Test exception"))
 	if err != nil {
 		log.Fatal(err)
 	}
