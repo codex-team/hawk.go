@@ -44,42 +44,34 @@ func getBacktrace(toSkip int) []Backtrace {
 }
 
 // readSourceCode reads the lines of code that caused the error.
-func readSourceCode(reader io.Reader, targetLine int) ([3]SourceCode, error) {
-	var res [3]SourceCode
-	lines := make([]string, 3)
+func readSourceCode(reader io.Reader, targetLine int) ([SourceCodeLines]SourceCode, error) {
+	var res [SourceCodeLines]SourceCode
+	lines := []string{}
 	scanner := bufio.NewScanner(reader)
-	i := 1
+	idx := 1
+	delta := SourceCodeLines - 2
 	for scanner.Scan() {
-		switch i {
-		case targetLine - 1:
-			lines[0] = scanner.Text()
-		case targetLine:
-			lines[1] = scanner.Text()
-		case targetLine + 1:
-			lines[2] = scanner.Text()
+		if idx == (targetLine - delta) {
+			lines = append(lines, scanner.Text())
+			delta--
 		}
-		if i == targetLine+1 {
+		if idx == targetLine+1 {
 			break
 		}
-		i++
+		idx++
 	}
 	if err := scanner.Err(); err != nil {
 		return res, err
 	}
 
-	res = [3]SourceCode{
-		{
-			LineNumber: targetLine - 1,
-			Content:    strings.Trim(lines[0], "\t"),
-		},
-		{
-			LineNumber: targetLine,
-			Content:    strings.Trim(lines[1], "\t"),
-		},
-		{
-			LineNumber: targetLine + 1,
-			Content:    strings.Trim(lines[2], "\t"),
-		},
+	res = [SourceCodeLines]SourceCode{}
+	delta = SourceCodeLines - 2
+	for i, _ := range res {
+		res[i] = SourceCode{
+			LineNumber: targetLine - delta,
+			Content:    strings.Trim(lines[i], "\t"),
+		}
+		delta--
 	}
 
 	return res, nil

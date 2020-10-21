@@ -32,7 +32,7 @@ func TestBacktrace(t *testing.T) {
 		expected := Backtrace{
 			File: pwd + "/catch_test.go",
 			Line: targetLine,
-			SourceCode: [3]SourceCode{
+			SourceCode: [SourceCodeLines]SourceCode{
 				{
 					LineNumber: targetLine - 1,
 					Content:    "t.Run(\"simple case\", func(t *testing.T) {",

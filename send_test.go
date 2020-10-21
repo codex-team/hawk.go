@@ -20,7 +20,7 @@ var reports = []ErrorReport{
 				{
 					File: "/test/test_client.go",
 					Line: 27,
-					SourceCode: [3]SourceCode{
+					SourceCode: [SourceCodeLines]SourceCode{
 						{
 							LineNumber: 26,
 							Content:    "\terr := returnTestError()",

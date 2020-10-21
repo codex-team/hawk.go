@@ -9,7 +9,7 @@ import (
 
 const (
 	// DefaultURL is the default Hawk URL to send errors.
-	DefaultURL = "https://hawk.so/catcher/golang"
+	DefaultURL = "https://k1.hawk.so/"
 	// CatcherType is the type of this Catcher.
 	CatcherType = "errors/golang"
 	// DefaultMaxBulkSize is default max amount of errors that can be sent at once.
@@ -61,6 +61,7 @@ func New(token string) (*Catcher, error) {
 
 // checkAccessToken validates access token.
 func checkAccessToken(accessToken string) error {
+	// TODO: implement JWT token validation
 	return nil
 }
 
