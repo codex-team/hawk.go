@@ -11,29 +11,30 @@ import (
 
 // send sends errors to Hawk.
 func (c *Catcher) send() error {
-	reqBytes, err := json.Marshal(c.errBuffer)
-	if err != nil {
-		return err
-	}
+	for _, rep := range c.errBuffer {
+		reqBytes, err := json.Marshal(rep)
+		if err != nil {
+			return err
+		}
 
-	req, err := http.NewRequest(http.MethodPost, c.hawkURL, bytes.NewBuffer(reqBytes))
-	req.Close = true
+		req, err := http.NewRequest(http.MethodPost, c.hawkURL, bytes.NewBuffer(reqBytes))
+		req.Close = true
 
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to send errors: %w", err)
-	}
-	defer resp.Body.Close()
-	respBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read body: %w", err)
-	}
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := c.client.Do(req)
+		if err != nil {
+			return fmt.Errorf("failed to send errors: %w", err)
+		}
+		defer resp.Body.Close()
+		respBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read body: %w", err)
+		}
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("\n\tstatus code: %d,\n\t body: %s\n\t payload: %s", resp.StatusCode, string(respBytes), string(reqBytes))
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("\n\tstatus code: %d,\n\t body: %s\n\t payload: %s", resp.StatusCode, string(respBytes), string(reqBytes))
+		}
 	}
-
 	return nil
 }
 

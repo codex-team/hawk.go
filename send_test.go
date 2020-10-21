@@ -48,7 +48,7 @@ func TestSend(t *testing.T) {
 			if err != nil {
 				t.Errorf("failed to read request body: %s", err.Error())
 			}
-			var res []ErrorReport
+			var res ErrorReport
 			err = json.Unmarshal(bodyBytes, &res)
 			if err != nil {
 				t.Errorf("failed to unmarshal json body: %s", err.Error())
