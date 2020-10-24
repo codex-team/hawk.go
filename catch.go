@@ -35,8 +35,9 @@ func getBacktrace(toSkip int) []Backtrace {
 		}
 
 		res = append(res, Backtrace{
-			File: frame.File,
-			Line: frame.Line,
+			File:     frame.File,
+			Line:     frame.Line,
+			Function: frame.Function,
 		})
 
 	}
@@ -44,12 +45,12 @@ func getBacktrace(toSkip int) []Backtrace {
 }
 
 // readSourceCode reads the lines of code that caused the error.
-func readSourceCode(reader io.Reader, targetLine int) ([SourceCodeLines]SourceCode, error) {
-	var res [SourceCodeLines]SourceCode
+func (c *Catcher) readSourceCode(reader io.Reader, targetLine int) ([]SourceCode, error) {
+	var res []SourceCode
 	lines := []string{}
 	scanner := bufio.NewScanner(reader)
 	idx := 1
-	delta := SourceCodeLines - 2
+	delta := c.SourceCodeLines - 2
 	for scanner.Scan() {
 		if idx == (targetLine - delta) {
 			lines = append(lines, scanner.Text())
@@ -64,12 +65,12 @@ func readSourceCode(reader io.Reader, targetLine int) ([SourceCodeLines]SourceCo
 		return res, err
 	}
 
-	res = [SourceCodeLines]SourceCode{}
-	delta = SourceCodeLines - 2
-	for i, _ := range res {
+	res = make([]SourceCode, c.SourceCodeLines)
+	delta = c.SourceCodeLines - 2
+	for i := range res {
 		res[i] = SourceCode{
 			LineNumber: targetLine - delta,
-			Content:    strings.Trim(lines[i], "\t"),
+			Content:    lines[i],
 		}
 		delta--
 	}
@@ -105,13 +106,14 @@ func (c *Catcher) Catch(err error) error {
 			continue
 		}
 
-		report.Payload.Backtrace[i].SourceCode, err = readSourceCode(file, bt.Line)
+		report.Payload.Backtrace[i].SourceCode, err = c.readSourceCode(file, bt.Line)
 		if err != nil {
 			log.Printf("failed to read file %s: %s", bt.File, err.Error())
 			continue
 		}
 		file.Close()
 	}
+	c.errorsCh <- report
 
-	return c.proceedReport(&report)
+	return nil
 }

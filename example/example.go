@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	catcher, err := hawk.New("token")
+	catcher, err := hawk.New("token", hawk.NewHTTPSender())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,6 +28,8 @@ func main() {
 }
 
 func parallelTest(catcher *hawk.Catcher) {
+	go catcher.Run()
+	defer catcher.Stop()
 	var wg sync.WaitGroup
 	for i := 1; i < 10; i++ {
 		wg.Add(1)
