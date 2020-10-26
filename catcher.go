@@ -16,8 +16,9 @@ const (
 	DefaultMaxBulkSize = 64
 	// DefaultMaxInterval is default max time interval to wait for errors before sending them.
 	DefaultMaxInterval = 5 * time.Minute
-	// DefaultSourceCodeLines is default number of source code lines that will be reported.
-	DefaultSourceCodeLines = 11
+	// DefaultSourceCodeLines is default number of source code lines before and
+	// after the line with error that will be reported.
+	DefaultSourceCodeLines = 5
 )
 
 // ErrEmptyURL is returned if an empty URL was provided in SetURL func.
@@ -37,7 +38,8 @@ type Catcher struct {
 	MaxBulkSize int
 	// maxInterval is max time interval to wait for errors before sending them.
 	MaxInterval time.Duration
-	// SourceCodeLines is number of source code lines that will be reported.
+	// SourceCodeLines is number of source code lines before and
+	// after the line with error that will be reported.
 	SourceCodeLines int
 
 	// accessToken is the Hawk access token.

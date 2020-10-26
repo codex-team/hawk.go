@@ -19,7 +19,7 @@ func TestBacktrace(t *testing.T) {
 			t.Fatalf("cannot open file %s: %s", bt[0].File, err.Error())
 		}
 		defer file.Close()
-		catcher := &Catcher{SourceCodeLines: 3}
+		catcher := &Catcher{SourceCodeLines: 1}
 		bt[0].SourceCode, err = catcher.readSourceCode(file, bt[0].Line)
 		if err != nil {
 			t.Fatalf("failed to read source code: %s", err.Error())

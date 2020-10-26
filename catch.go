@@ -50,13 +50,13 @@ func (c *Catcher) readSourceCode(reader io.Reader, targetLine int) ([]SourceCode
 	lines := []string{}
 	scanner := bufio.NewScanner(reader)
 	idx := 1
-	delta := c.SourceCodeLines - 2
+	delta := c.SourceCodeLines
 	for scanner.Scan() {
 		if idx == (targetLine - delta) {
 			lines = append(lines, scanner.Text())
 			delta--
 		}
-		if idx == targetLine+1 {
+		if idx == targetLine+c.SourceCodeLines {
 			break
 		}
 		idx++
@@ -65,13 +65,13 @@ func (c *Catcher) readSourceCode(reader io.Reader, targetLine int) ([]SourceCode
 		return res, err
 	}
 
-	res = make([]SourceCode, c.SourceCodeLines)
-	delta = c.SourceCodeLines - 2
-	for i := range res {
-		res[i] = SourceCode{
+	res = []SourceCode{}
+	delta = c.SourceCodeLines
+	for i := range lines {
+		res = append(res, SourceCode{
 			LineNumber: targetLine - delta,
 			Content:    lines[i],
-		}
+		})
 		delta--
 	}
 
