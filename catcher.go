@@ -38,6 +38,9 @@ type Catcher struct {
 	MaxBulkSize int
 	// maxInterval is max time interval to wait for errors before sending them.
 	MaxInterval time.Duration
+	// SourceCodeEnabled sets whether source code is available and should be
+	// collected in backtrace.
+	SourceCodeEnabled bool
 	// SourceCodeLines is number of source code lines before and
 	// after the line with error that will be reported.
 	SourceCodeLines int
@@ -62,14 +65,15 @@ func New(token string, s Sender) (*Catcher, error) {
 	}
 
 	catcher := &Catcher{
-		accessToken:     token,
-		MaxBulkSize:     DefaultMaxBulkSize,
-		MaxInterval:     DefaultMaxInterval,
-		SourceCodeLines: DefaultSourceCodeLines,
-		lastSendTime:    time.Now(),
-		errorsCh:        make(chan ErrorReport),
-		done:            make(chan error),
-		sender:          s,
+		accessToken:       token,
+		MaxBulkSize:       DefaultMaxBulkSize,
+		MaxInterval:       DefaultMaxInterval,
+		SourceCodeEnabled: true,
+		SourceCodeLines:   DefaultSourceCodeLines,
+		lastSendTime:      time.Now(),
+		errorsCh:          make(chan ErrorReport),
+		done:              make(chan error),
+		sender:            s,
 	}
 
 	return catcher, nil

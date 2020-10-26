@@ -99,19 +99,22 @@ func (c *Catcher) Catch(err error) error {
 		return ErrEmptyBacktrace
 	}
 
-	for i, bt := range report.Payload.Backtrace {
-		file, err := os.Open(bt.File)
-		if err != nil {
-			log.Printf("failed to open file %s: %s", bt.File, err.Error())
-			continue
-		}
+	if c.SourceCodeEnabled {
+		for i, bt := range report.Payload.Backtrace {
+			file, err := os.Open(bt.File)
+			if err != nil {
+				log.Printf("failed to open file %s: %s", bt.File, err.Error())
+				break
+			}
 
-		report.Payload.Backtrace[i].SourceCode, err = c.readSourceCode(file, bt.Line)
-		if err != nil {
-			log.Printf("failed to read file %s: %s", bt.File, err.Error())
-			continue
+			report.Payload.Backtrace[i].SourceCode, err = c.readSourceCode(file, bt.Line)
+			if err != nil {
+				log.Printf("failed to read file %s: %s", bt.File, err.Error())
+				file.Close()
+				continue
+			}
+			file.Close()
 		}
-		file.Close()
 	}
 	c.errorsCh <- report
 
