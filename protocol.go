@@ -1,9 +1,7 @@
 package hawk
 
-// SourceCodeLines is number of source code lines that will be reported.
-const SourceCodeLines = 3
-
 // ErrorReport is a report about an error that is sent to Hawk.
+// easyjson:json
 type ErrorReport struct {
 	// Token is the Hawk access token.
 	Token string `json:"token"`
@@ -33,9 +31,11 @@ type Backtrace struct {
 	File string `json:"file"`
 	// Line is the number of line which caused the error.
 	Line int `json:"line"`
+	// Function is the name of function where error was caught.
+	Function string `json:"function"`
 	// SourceCode contains the line which caused the error, the previous and the
 	// next lines.
-	SourceCode [SourceCodeLines]SourceCode `json:"sourceCode,omitempty"`
+	SourceCode []SourceCode `json:"sourceCode,omitempty"`
 }
 
 // SourceCode contains the line which caused the error, the previous and the

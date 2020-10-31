@@ -16,18 +16,25 @@ go get https://github.com/codex-team/hawk.go
 package main
 
 import(
+  "fmt"
+  "log"
+
 	"github.com/codex-team/hawk.go"
 )
 
 func main() {
-    // initialize Hawk catcher
-    catcher, err := hawk.New("abcd1234-1234-abcd-1234-123456abcdef")
+    // initialize Hawk Catcher
+    catcher, err := hawk.New("abcd1234-1234-abcd-1234-123456abcdef", hawk.NewHTTPSender())
     if err != nil {
-        panic(err)
+        log.Fatal(err)
     }
-    err = catcher.Catch(errors.New("Test exception"))
+
+    go catcher.Run()
+    defer catcher.Stop()
+
+    err = catcher.Catch(fmt.Errorf("Test exception"))
     if err != nil {
-        panic(err)
+        log.Fatal(err)
     }
 }
 ```
