@@ -34,7 +34,6 @@ func NewWebsocketSender() Sender {
 // connect establishes connection to Hawk.
 func (w *WebsocketSender) connect() error {
 	conn, _, _, err := ws.DefaultDialer.Dial(context.TODO(), w.addr)
-	//	conn, err := net.Dial("tcp", w.addr)
 	if err != nil {
 		return err
 	}
@@ -92,6 +91,10 @@ func (w *WebsocketSender) Send(data []ErrorReport) error {
 		if err != nil {
 			return err
 		}
+		err = writer.Flush()
+		if err != nil {
+			return err
+		}
 	}
 
 	return writer.Flush()
@@ -100,4 +103,9 @@ func (w *WebsocketSender) Send(data []ErrorReport) error {
 // SetURL sets addr field for WebsocketSender instance.
 func (w *WebsocketSender) setURL(hawkURL string) {
 	w.addr = hawkURL
+}
+
+// GetURL returns addr.
+func (w *WebsocketSender) getURL() string {
+	return w.addr
 }

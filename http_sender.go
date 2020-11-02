@@ -59,3 +59,8 @@ func (h *HTTPSender) Send(data []ErrorReport) error {
 func (h *HTTPSender) setURL(hawkURL string) {
 	h.addr = hawkURL
 }
+
+// GetURL returns addr.
+func (h *HTTPSender) getURL() string {
+	return h.addr
+}

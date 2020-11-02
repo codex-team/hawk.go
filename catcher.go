@@ -30,6 +30,8 @@ type Sender interface {
 	Send([]ErrorReport) error
 	// setURL is used to set custom URL.
 	setURL(string)
+	// GetURL returns Sender's URL.
+	getURL() string
 }
 
 // Catcher collects information about errors and sends them to Hawk.
@@ -136,4 +138,9 @@ func (c *Catcher) SetURL(hawkURL string) error {
 	c.sender.setURL(hawkURL)
 
 	return nil
+}
+
+// GetURL returns Sender's URL.
+func (c *Catcher) GetURL() string {
+	return c.sender.getURL()
 }
