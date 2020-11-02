@@ -97,7 +97,7 @@ func (w *WebsocketSender) Send(data []ErrorReport) error {
 		}
 	}
 
-	return writer.Flush()
+	return nil
 }
 
 // SetURL sets addr field for WebsocketSender instance.
