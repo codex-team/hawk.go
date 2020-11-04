@@ -34,6 +34,7 @@ func main() {
 
     err = catcher.Catch(fmt.Errorf("Test exception"))
     if err != nil {
+        catcher.Stop()
         log.Fatal(err)
     }
 }

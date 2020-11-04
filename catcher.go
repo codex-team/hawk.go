@@ -2,6 +2,7 @@ package hawk
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/url"
 	"time"
@@ -93,6 +94,12 @@ func (c *Catcher) Run() {
 	for {
 		select {
 		case err := <-c.done:
+			if len(buffer) > 0 {
+				sendErr := c.sender.Send(buffer)
+				if sendErr != nil {
+					log.Fatal(fmt.Errorf("failed to send errors: %s;\nCatcher exited with error: %w", sendErr.Error(), err))
+				}
+			}
 			if err != nil {
 				log.Fatal(err)
 			}
