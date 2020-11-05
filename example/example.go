@@ -36,6 +36,7 @@ func parallelTest(catcher *hawk.Catcher) {
 		go func(i int) {
 			err := catcher.Catch(fmt.Errorf("Test exception №%d", i))
 			if err != nil {
+				catcher.Stop()
 				log.Fatal(err)
 			}
 			wg.Done()
