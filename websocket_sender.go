@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 )
