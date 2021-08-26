@@ -17,7 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjsonE4425964DecodeGithubComCodexTeamHawkGo(in *jlexer.Lexer, out *ErrorReport) {
+func easyjsonE4425964DecodeGithubComCodexTeamHawkGo(in *jlexer.Lexer, out *SourceCode) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -36,12 +36,10 @@ func easyjsonE4425964DecodeGithubComCodexTeamHawkGo(in *jlexer.Lexer, out *Error
 			continue
 		}
 		switch key {
-		case "token":
-			out.Token = string(in.String())
-		case "catcherType":
-			out.CatcherType = string(in.String())
-		case "payload":
-			easyjsonE4425964DecodeGithubComCodexTeamHawkGo1(in, &out.Payload)
+		case "line":
+			out.LineNumber = int(in.Int())
+		case "content":
+			out.Content = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -52,49 +50,44 @@ func easyjsonE4425964DecodeGithubComCodexTeamHawkGo(in *jlexer.Lexer, out *Error
 		in.Consumed()
 	}
 }
-func easyjsonE4425964EncodeGithubComCodexTeamHawkGo(out *jwriter.Writer, in ErrorReport) {
+func easyjsonE4425964EncodeGithubComCodexTeamHawkGo(out *jwriter.Writer, in SourceCode) {
 	out.RawByte('{')
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"token\":"
+		const prefix string = ",\"line\":"
 		out.RawString(prefix[1:])
-		out.String(string(in.Token))
+		out.Int(int(in.LineNumber))
 	}
 	{
-		const prefix string = ",\"catcherType\":"
+		const prefix string = ",\"content\":"
 		out.RawString(prefix)
-		out.String(string(in.CatcherType))
-	}
-	{
-		const prefix string = ",\"payload\":"
-		out.RawString(prefix)
-		easyjsonE4425964EncodeGithubComCodexTeamHawkGo1(out, in.Payload)
+		out.String(string(in.Content))
 	}
 	out.RawByte('}')
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v ErrorReport) MarshalJSON() ([]byte, error) {
+func (v SourceCode) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjsonE4425964EncodeGithubComCodexTeamHawkGo(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v ErrorReport) MarshalEasyJSON(w *jwriter.Writer) {
+func (v SourceCode) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjsonE4425964EncodeGithubComCodexTeamHawkGo(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *ErrorReport) UnmarshalJSON(data []byte) error {
+func (v *SourceCode) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjsonE4425964DecodeGithubComCodexTeamHawkGo(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *ErrorReport) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *SourceCode) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjsonE4425964DecodeGithubComCodexTeamHawkGo(l, v)
 }
 func easyjsonE4425964DecodeGithubComCodexTeamHawkGo1(in *jlexer.Lexer, out *Payload) {
@@ -118,10 +111,8 @@ func easyjsonE4425964DecodeGithubComCodexTeamHawkGo1(in *jlexer.Lexer, out *Payl
 		switch key {
 		case "title":
 			out.Title = string(in.String())
-		case "timestamp":
-			out.Timestamp = string(in.String())
-		case "level":
-			out.Severity = int(in.Int())
+		case "type":
+			out.Type = string(in.String())
 		case "backtrace":
 			if in.IsNull() {
 				in.Skip()
@@ -139,12 +130,20 @@ func easyjsonE4425964DecodeGithubComCodexTeamHawkGo1(in *jlexer.Lexer, out *Payl
 				}
 				for !in.IsDelim(']') {
 					var v1 Backtrace
-					easyjsonE4425964DecodeGithubComCodexTeamHawkGo2(in, &v1)
+					(v1).UnmarshalEasyJSON(in)
 					out.Backtrace = append(out.Backtrace, v1)
 					in.WantComma()
 				}
 				in.Delim(']')
 			}
+		case "release":
+			out.Release = string(in.String())
+		case "user":
+			(out.User).UnmarshalEasyJSON(in)
+		case "context":
+			(out.Context).UnmarshalEasyJSON(in)
+		case "catcherVersion":
+			out.CatcherVersion = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -165,14 +164,9 @@ func easyjsonE4425964EncodeGithubComCodexTeamHawkGo1(out *jwriter.Writer, in Pay
 		out.String(string(in.Title))
 	}
 	{
-		const prefix string = ",\"timestamp\":"
+		const prefix string = ",\"type\":"
 		out.RawString(prefix)
-		out.String(string(in.Timestamp))
-	}
-	if in.Severity != 0 {
-		const prefix string = ",\"level\":"
-		out.RawString(prefix)
-		out.Int(int(in.Severity))
+		out.String(string(in.Type))
 	}
 	{
 		const prefix string = ",\"backtrace\":"
@@ -185,14 +179,138 @@ func easyjsonE4425964EncodeGithubComCodexTeamHawkGo1(out *jwriter.Writer, in Pay
 				if v2 > 0 {
 					out.RawByte(',')
 				}
-				easyjsonE4425964EncodeGithubComCodexTeamHawkGo2(out, v3)
+				(v3).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
 	}
+	{
+		const prefix string = ",\"release\":"
+		out.RawString(prefix)
+		out.String(string(in.Release))
+	}
+	{
+		const prefix string = ",\"user\":"
+		out.RawString(prefix)
+		(in.User).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"context\":"
+		out.RawString(prefix)
+		(in.Context).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"catcherVersion\":"
+		out.RawString(prefix)
+		out.String(string(in.CatcherVersion))
+	}
 	out.RawByte('}')
 }
-func easyjsonE4425964DecodeGithubComCodexTeamHawkGo2(in *jlexer.Lexer, out *Backtrace) {
+
+// MarshalJSON supports json.Marshaler interface
+func (v Payload) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjsonE4425964EncodeGithubComCodexTeamHawkGo1(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v Payload) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonE4425964EncodeGithubComCodexTeamHawkGo1(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *Payload) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjsonE4425964DecodeGithubComCodexTeamHawkGo1(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *Payload) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonE4425964DecodeGithubComCodexTeamHawkGo1(l, v)
+}
+func easyjsonE4425964DecodeGithubComCodexTeamHawkGo2(in *jlexer.Lexer, out *ErrorReport) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "token":
+			out.Token = string(in.String())
+		case "catcherType":
+			out.CatcherType = string(in.String())
+		case "payload":
+			(out.Payload).UnmarshalEasyJSON(in)
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjsonE4425964EncodeGithubComCodexTeamHawkGo2(out *jwriter.Writer, in ErrorReport) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"token\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.Token))
+	}
+	{
+		const prefix string = ",\"catcherType\":"
+		out.RawString(prefix)
+		out.String(string(in.CatcherType))
+	}
+	{
+		const prefix string = ",\"payload\":"
+		out.RawString(prefix)
+		(in.Payload).MarshalEasyJSON(out)
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v ErrorReport) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjsonE4425964EncodeGithubComCodexTeamHawkGo2(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v ErrorReport) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonE4425964EncodeGithubComCodexTeamHawkGo2(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *ErrorReport) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjsonE4425964DecodeGithubComCodexTeamHawkGo2(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *ErrorReport) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonE4425964DecodeGithubComCodexTeamHawkGo2(l, v)
+}
+func easyjsonE4425964DecodeGithubComCodexTeamHawkGo3(in *jlexer.Lexer, out *Backtrace) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -234,7 +352,7 @@ func easyjsonE4425964DecodeGithubComCodexTeamHawkGo2(in *jlexer.Lexer, out *Back
 				}
 				for !in.IsDelim(']') {
 					var v4 SourceCode
-					easyjsonE4425964DecodeGithubComCodexTeamHawkGo3(in, &v4)
+					(v4).UnmarshalEasyJSON(in)
 					out.SourceCode = append(out.SourceCode, v4)
 					in.WantComma()
 				}
@@ -250,7 +368,7 @@ func easyjsonE4425964DecodeGithubComCodexTeamHawkGo2(in *jlexer.Lexer, out *Back
 		in.Consumed()
 	}
 }
-func easyjsonE4425964EncodeGithubComCodexTeamHawkGo2(out *jwriter.Writer, in Backtrace) {
+func easyjsonE4425964EncodeGithubComCodexTeamHawkGo3(out *jwriter.Writer, in Backtrace) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -278,14 +396,38 @@ func easyjsonE4425964EncodeGithubComCodexTeamHawkGo2(out *jwriter.Writer, in Bac
 				if v5 > 0 {
 					out.RawByte(',')
 				}
-				easyjsonE4425964EncodeGithubComCodexTeamHawkGo3(out, v6)
+				(v6).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
 	}
 	out.RawByte('}')
 }
-func easyjsonE4425964DecodeGithubComCodexTeamHawkGo3(in *jlexer.Lexer, out *SourceCode) {
+
+// MarshalJSON supports json.Marshaler interface
+func (v Backtrace) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjsonE4425964EncodeGithubComCodexTeamHawkGo3(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v Backtrace) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonE4425964EncodeGithubComCodexTeamHawkGo3(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *Backtrace) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjsonE4425964DecodeGithubComCodexTeamHawkGo3(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *Backtrace) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonE4425964DecodeGithubComCodexTeamHawkGo3(l, v)
+}
+func easyjsonE4425964DecodeGithubComCodexTeamHawkGo4(in *jlexer.Lexer, out *AffectedUser) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -304,10 +446,14 @@ func easyjsonE4425964DecodeGithubComCodexTeamHawkGo3(in *jlexer.Lexer, out *Sour
 			continue
 		}
 		switch key {
-		case "line":
-			out.LineNumber = int(in.Int())
-		case "content":
-			out.Content = string(in.String())
+		case "id":
+			out.Id = string(in.String())
+		case "name":
+			out.Name = string(in.String())
+		case "url":
+			out.URL = string(in.String())
+		case "image":
+			out.Image = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -318,19 +464,53 @@ func easyjsonE4425964DecodeGithubComCodexTeamHawkGo3(in *jlexer.Lexer, out *Sour
 		in.Consumed()
 	}
 }
-func easyjsonE4425964EncodeGithubComCodexTeamHawkGo3(out *jwriter.Writer, in SourceCode) {
+func easyjsonE4425964EncodeGithubComCodexTeamHawkGo4(out *jwriter.Writer, in AffectedUser) {
 	out.RawByte('{')
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"line\":"
+		const prefix string = ",\"id\":"
 		out.RawString(prefix[1:])
-		out.Int(int(in.LineNumber))
+		out.String(string(in.Id))
 	}
 	{
-		const prefix string = ",\"content\":"
+		const prefix string = ",\"name\":"
 		out.RawString(prefix)
-		out.String(string(in.Content))
+		out.String(string(in.Name))
+	}
+	{
+		const prefix string = ",\"url\":"
+		out.RawString(prefix)
+		out.String(string(in.URL))
+	}
+	{
+		const prefix string = ",\"image\":"
+		out.RawString(prefix)
+		out.String(string(in.Image))
 	}
 	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v AffectedUser) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjsonE4425964EncodeGithubComCodexTeamHawkGo4(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v AffectedUser) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonE4425964EncodeGithubComCodexTeamHawkGo4(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *AffectedUser) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjsonE4425964DecodeGithubComCodexTeamHawkGo4(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *AffectedUser) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonE4425964DecodeGithubComCodexTeamHawkGo4(l, v)
 }

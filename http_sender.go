@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -26,10 +27,13 @@ func NewHTTPSender() Sender {
 // Send sends errors to Hawk.
 func (h *HTTPSender) Send(data []ErrorReport) error {
 	for _, rep := range data {
+		fmt.Printf("%s", rep)
 		reqBytes, err := rep.MarshalJSON()
 		if err != nil {
 			return err
 		}
+
+		log.Printf("%s\n", reqBytes)
 
 		req, err := http.NewRequest(http.MethodPost, h.addr, bytes.NewBuffer(reqBytes))
 		if err != nil {

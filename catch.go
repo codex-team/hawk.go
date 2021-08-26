@@ -2,14 +2,13 @@ package hawk
 
 import (
 	"bufio"
+	json "encoding/json"
 	"errors"
 	"io"
 	"log"
 	"os"
 	"runtime"
-	"strconv"
 	"strings"
-	"time"
 )
 
 // ErrEmptyBacktrace is returned if getBacktrace collected empty backtrace.
@@ -50,13 +49,13 @@ func (c *Catcher) readSourceCode(reader io.Reader, targetLine int) ([]SourceCode
 	lines := []string{}
 	scanner := bufio.NewScanner(reader)
 	idx := 1
-	delta := c.SourceCodeLines
+	delta := c.options.SourceCodeLines
 	for scanner.Scan() {
 		if idx == (targetLine - delta) {
 			lines = append(lines, scanner.Text())
 			delta--
 		}
-		if idx == targetLine+c.SourceCodeLines {
+		if idx == targetLine+c.options.SourceCodeLines {
 			break
 		}
 		idx++
@@ -66,7 +65,7 @@ func (c *Catcher) readSourceCode(reader io.Reader, targetLine int) ([]SourceCode
 	}
 
 	res = []SourceCode{}
-	delta = c.SourceCodeLines
+	delta = c.options.SourceCodeLines
 	for i := range lines {
 		res = append(res, SourceCode{
 			LineNumber: targetLine - delta,
@@ -78,20 +77,34 @@ func (c *Catcher) readSourceCode(reader io.Reader, targetLine int) ([]SourceCode
 	return res, nil
 }
 
-// Catch creates ErrorReport for provided error, collects backtrace and sends
-// data to Hawk.
-func (c *Catcher) Catch(err error) error {
+// Catch takes error object and additional options to pass to the catchWithPayload
+func (c *Catcher) Catch(err error, opts ...HawkAdditionalParams) error {
 	if err == nil {
 		return nil
 	}
 
+	h := &Payload{
+		Title:          err.Error(),
+		Type:           DefaultType,
+		CatcherVersion: VERSION,
+	}
+
+	// Loop through each option
+	for _, opt := range opts {
+		// Call the option giving the instantiated *Payload as the argument
+		opt(h)
+	}
+
+	// return the modified Payload instance
+	return c.catchWithPayload(*h)
+}
+
+// catchWithPayload creates ErrorReport for provided error, collects backtrace and sends data to Hawk.
+func (c *Catcher) catchWithPayload(payload Payload) error {
 	report := ErrorReport{
-		Token:       c.accessToken,
+		Token:       c.options.AccessToken,
 		CatcherType: CatcherType,
-		Payload: Payload{
-			Title:     err.Error(),
-			Timestamp: strconv.Itoa(int(time.Now().Unix())),
-		},
+		Payload:     payload,
 	}
 
 	report.Payload.Backtrace = getBacktrace(1)
@@ -99,7 +112,7 @@ func (c *Catcher) Catch(err error) error {
 		return ErrEmptyBacktrace
 	}
 
-	if c.SourceCodeEnabled {
+	if c.options.SourceCodeEnabled {
 		for i, bt := range report.Payload.Backtrace {
 			file, err := os.Open(bt.File)
 			if err != nil {
@@ -116,7 +129,31 @@ func (c *Catcher) Catch(err error) error {
 			file.Close()
 		}
 	}
+
 	c.errorsCh <- report
 
 	return nil
+}
+
+func WithContext(context interface{}) HawkAdditionalParams {
+	return func(h *Payload) {
+		if context != nil {
+			b, err := json.Marshal(&context)
+			if err == nil {
+				h.Context = b
+			}
+		}
+	}
+}
+
+func WithUser(user AffectedUser) HawkAdditionalParams {
+	return func(h *Payload) {
+		h.User = user
+	}
+}
+
+func WithRelease(release string) HawkAdditionalParams {
+	return func(h *Payload) {
+		h.Release = release
+	}
 }

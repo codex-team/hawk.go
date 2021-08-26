@@ -3,44 +3,41 @@ package main
 import (
 	"fmt"
 	"log"
-	"sync"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
 
 	"github.com/codex-team/hawk.go"
 )
 
 func main() {
-	catcher, err := hawk.New("token", hawk.NewHTTPSender())
+	options := hawk.DefaultHawkOptions()
+	options.MaxInterval = 1 * time.Second
+	options.AccessToken = "<TOKEN>"
+	options.URL = "https://test.stage-k1.hawk.so"
+	options.Release = "v1.3.3"
+
+	catcher, err := hawk.New(options, hawk.NewHTTPSender())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = catcher.SetURL("http://localhost:3000/catcher")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = catcher.Catch(fmt.Errorf("Test exception"))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	parallelTest(catcher)
-}
-
-func parallelTest(catcher *hawk.Catcher) {
 	go catcher.Run()
 	defer catcher.Stop()
-	var wg sync.WaitGroup
-	for i := 1; i < 10; i++ {
-		wg.Add(1)
-		go func(i int) {
-			err := catcher.Catch(fmt.Errorf("Test exception №%d", i))
-			if err != nil {
-				catcher.Stop()
-				log.Fatal(err)
-			}
-			wg.Done()
-		}(i)
+
+	err = catcher.Catch(fmt.Errorf("exception NEW"),
+		hawk.WithContext(struct{ Timestamp string }{Timestamp: strconv.Itoa(int(time.Now().Unix()))}),
+		hawk.WithUser(hawk.AffectedUser{Id: "uid", Name: "N0str"}),
+		hawk.WithRelease("v-3.7"),
+	)
+	if err != nil {
+		catcher.Stop()
+		log.Fatal(err)
 	}
-	wg.Wait()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
 }
