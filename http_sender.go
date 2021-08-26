@@ -27,7 +27,6 @@ func NewHTTPSender() Sender {
 // Send sends errors to Hawk.
 func (h *HTTPSender) Send(data []ErrorReport) error {
 	for _, rep := range data {
-		fmt.Printf("%s", rep)
 		reqBytes, err := rep.MarshalJSON()
 		if err != nil {
 			return err

@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
@@ -17,8 +16,7 @@ var reports = []ErrorReport{
 		Token:       "abcd",
 		CatcherType: "errors/golang",
 		Payload: Payload{
-			Title:     "test error 1",
-			Timestamp: time.Now().String(),
+			Title: "test error 1",
 			Backtrace: []Backtrace{
 				{
 					File: "/test/test_client.go",
