@@ -3,44 +3,52 @@ package main
 import (
 	"fmt"
 	"log"
-	"sync"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
 
 	"github.com/codex-team/hawk.go"
 )
 
 func main() {
-	catcher, err := hawk.New("token", hawk.NewHTTPSender())
+	options := hawk.DefaultHawkOptions()
+	options.AccessToken = "<TOKEN>"
+	options.Domain = "stage-k1.hawk.so"
+	options.Debug = true
+	options.Transport = hawk.HTTPTransport{}
+	options.AffectedUser = hawk.AffectedUser{Id: "01", Name: "default user"}
+
+	catcher, err := hawk.New(options)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = catcher.SetURL("http://localhost:3000/catcher")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = catcher.Catch(fmt.Errorf("Test exception"))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	parallelTest(catcher)
-}
-
-func parallelTest(catcher *hawk.Catcher) {
 	go catcher.Run()
 	defer catcher.Stop()
-	var wg sync.WaitGroup
-	for i := 1; i < 10; i++ {
-		wg.Add(1)
-		go func(i int) {
-			err := catcher.Catch(fmt.Errorf("Test exception №%d", i))
-			if err != nil {
-				catcher.Stop()
-				log.Fatal(err)
-			}
-			wg.Done()
-		}(i)
+
+	err = catcher.Catch(fmt.Errorf("manual exception without context"))
+	if err != nil {
+		catcher.Stop()
+		log.Fatal(err)
 	}
-	wg.Wait()
+
+	err = catcher.Catch(fmt.Errorf("manual exception with context"),
+		hawk.WithContext(struct{ Timestamp string }{Timestamp: strconv.Itoa(int(time.Now().Unix()))}),
+		hawk.WithUser(hawk.AffectedUser{Id: "uid", Name: "N0str"}),
+		hawk.WithRelease("v-3.7"),
+	)
+	if err != nil {
+		catcher.Stop()
+		log.Fatal(err)
+	}
+
+	// panic
+	var s []interface{}
+	fmt.Println(s[10])
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
 }

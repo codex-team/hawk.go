@@ -23,11 +23,14 @@ type WebsocketSender struct {
 	addr string
 }
 
+type WebsocketTransport struct {
+}
+
 // NewWebsocketSender returns new WebsocketSender instant with default address.
-func NewWebsocketSender() Sender {
+func NewWebsocketSender(addr string) Sender {
 	return &WebsocketSender{
 		mx:   sync.Mutex{},
-		addr: "ws" + strings.TrimPrefix(DefaultURL, "http"),
+		addr: "ws" + strings.TrimPrefix(addr, "http"),
 	}
 }
 
@@ -98,14 +101,4 @@ func (w *WebsocketSender) Send(data []ErrorReport) error {
 	}
 
 	return nil
-}
-
-// SetURL sets addr field for WebsocketSender instance.
-func (w *WebsocketSender) setURL(hawkURL string) {
-	w.addr = hawkURL
-}
-
-// GetURL returns addr.
-func (w *WebsocketSender) getURL() string {
-	return w.addr
 }

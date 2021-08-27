@@ -1,5 +1,10 @@
 package hawk
 
+import "github.com/mailru/easyjson"
+
+const DefaultType = "error"
+const ManualType = "manual"
+
 // ErrorReport is a report about an error that is sent to Hawk.
 // easyjson:json
 type ErrorReport struct {
@@ -11,17 +16,39 @@ type ErrorReport struct {
 	Payload Payload `json:"payload"`
 }
 
+type ErrorContext easyjson.RawMessage
+
+type AffectedUser struct {
+	// Internal user's identifier inside an app
+	Id string `json:"id"`
+	// User public name
+	Name string `json:"name"`
+	// URL for user's details page
+	URL string `json:"url"`
+	// User's public picture
+	Image string `json:"image"`
+}
+
+func (au *AffectedUser) isEmpty() bool {
+	return au.Id == "" && au.Name == "" && au.URL == "" && au.Image == ""
+}
+
 // Payload is the information about the error.
 type Payload struct {
 	// Title is the error name.
 	Title string `json:"title"`
-	// Timestamp represents time when the error was caught by the Catcher.
-	Timestamp string `json:"timestamp"`
-	// Severity is the error's severity level.
-	Severity int `json:"level,omitempty"`
-	// Backtrace contains information about the function calls that caused the
-	// error.
+	// Event type (severity level)
+	Type string `json:"type"`
+	// Backtrace contains information about the function calls that caused the error.
 	Backtrace []Backtrace `json:"backtrace"`
+	// Current release (aka version, revision) of an application
+	Release string `json:"release"`
+	// Current authenticated user
+	User AffectedUser `json:"user"`
+	// Any other information collected and passed by user
+	Context easyjson.RawMessage `json:"context"`
+	// Catcher version
+	CatcherVersion string `json:"catcherVersion"`
 }
 
 // Backtrace contains information about the function calls that caused the

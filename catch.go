@@ -2,14 +2,14 @@ package hawk
 
 import (
 	"bufio"
+	json "encoding/json"
 	"errors"
 	"io"
 	"log"
 	"os"
 	"runtime"
-	"strconv"
-	"strings"
-	"time"
+
+	"github.com/mailru/easyjson"
 )
 
 // ErrEmptyBacktrace is returned if getBacktrace collected empty backtrace.
@@ -30,10 +30,6 @@ func getBacktrace(toSkip int) []Backtrace {
 	frames := runtime.CallersFrames(pc[:numFrames])
 
 	for frame, more := frames.Next(); more; frame, more = frames.Next() {
-		if strings.Contains(frame.File, "runtime") {
-			break
-		}
-
 		res = append(res, Backtrace{
 			File:     frame.File,
 			Line:     frame.Line,
@@ -50,13 +46,13 @@ func (c *Catcher) readSourceCode(reader io.Reader, targetLine int) ([]SourceCode
 	lines := []string{}
 	scanner := bufio.NewScanner(reader)
 	idx := 1
-	delta := c.SourceCodeLines
+	delta := c.options.SourceCodeLines
 	for scanner.Scan() {
 		if idx == (targetLine - delta) {
 			lines = append(lines, scanner.Text())
 			delta--
 		}
-		if idx == targetLine+c.SourceCodeLines {
+		if idx == targetLine+c.options.SourceCodeLines {
 			break
 		}
 		idx++
@@ -66,7 +62,7 @@ func (c *Catcher) readSourceCode(reader io.Reader, targetLine int) ([]SourceCode
 	}
 
 	res = []SourceCode{}
-	delta = c.SourceCodeLines
+	delta = c.options.SourceCodeLines
 	for i := range lines {
 		res = append(res, SourceCode{
 			LineNumber: targetLine - delta,
@@ -78,28 +74,65 @@ func (c *Catcher) readSourceCode(reader io.Reader, targetLine int) ([]SourceCode
 	return res, nil
 }
 
-// Catch creates ErrorReport for provided error, collects backtrace and sends
-// data to Hawk.
-func (c *Catcher) Catch(err error) error {
+// Catch takes error object and additional options to pass to the catchWithPayload
+func (c *Catcher) Catch(err error, opts ...HawkAdditionalParams) error {
 	if err == nil {
 		return nil
 	}
 
-	report := ErrorReport{
-		Token:       c.accessToken,
-		CatcherType: CatcherType,
-		Payload: Payload{
-			Title:     err.Error(),
-			Timestamp: strconv.Itoa(int(time.Now().Unix())),
-		},
+	h := &Payload{
+		Title:          err.Error(),
+		Type:           ManualType,
+		CatcherVersion: VERSION,
 	}
 
-	report.Payload.Backtrace = getBacktrace(1)
+	// Loop through each option
+	for _, opt := range opts {
+		// Call the option giving the instantiated *Payload as the argument
+		opt(h)
+	}
+
+	// return the modified Payload instance
+	return c.catchWithPayload(*h)
+}
+
+// catchWithPayload creates ErrorReport for provided error, collects backtrace and sends data to Hawk.
+func (c *Catcher) catchWithPayload(payload Payload) error {
+	if payload.User.isEmpty() {
+		payload.User = c.options.AffectedUser
+	}
+	if payload.Release == "" {
+		payload.Release = c.options.Release
+	}
+
+	// add integrationID to context if Debug is enabled
+	if c.integrationID != "" && c.options.Debug {
+		var context map[string]interface{}
+		if payload.Context == nil {
+			payload.Context = easyjson.RawMessage(`{}`)
+		}
+		err := json.Unmarshal(payload.Context, &context)
+		if err == nil {
+			context["integrationID"] = c.integrationID
+			newContext, err := json.Marshal(context)
+			if err == nil {
+				payload.Context = newContext
+			}
+		}
+	}
+
+	report := ErrorReport{
+		Token:       c.options.AccessToken,
+		CatcherType: CatcherType,
+		Payload:     payload,
+	}
+
+	report.Payload.Backtrace = getBacktrace(2)
 	if len(report.Payload.Backtrace) == 0 {
 		return ErrEmptyBacktrace
 	}
 
-	if c.SourceCodeEnabled {
+	if c.options.SourceCodeEnabled {
 		for i, bt := range report.Payload.Backtrace {
 			file, err := os.Open(bt.File)
 			if err != nil {
@@ -116,7 +149,31 @@ func (c *Catcher) Catch(err error) error {
 			file.Close()
 		}
 	}
+
 	c.errorsCh <- report
 
 	return nil
+}
+
+func WithContext(context interface{}) HawkAdditionalParams {
+	return func(h *Payload) {
+		if context != nil {
+			b, err := json.Marshal(&context)
+			if err == nil {
+				h.Context = b
+			}
+		}
+	}
+}
+
+func WithUser(user AffectedUser) HawkAdditionalParams {
+	return func(h *Payload) {
+		h.User = user
+	}
+}
+
+func WithRelease(release string) HawkAdditionalParams {
+	return func(h *Payload) {
+		h.Release = release
+	}
 }

@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"net/url"
 )
 
 // HTTPSender is a Sender implementation thar sends errors via http.Client.
@@ -13,13 +15,26 @@ type HTTPSender struct {
 	addr string
 	// client is HTTP client
 	client *http.Client
+	// debug
+	debug bool
+}
+
+type HTTPTransport struct {
 }
 
 // NewHTTPSender returns new HTTPSender instant with default address.
-func NewHTTPSender() Sender {
+func NewHTTPSender(addr string, debug bool) Sender {
+	endpoint := url.URL{
+		Scheme: "https",
+		Host:   addr,
+	}
+	if debug {
+		log.Printf("Init Hawk sender: %s", endpoint.String())
+	}
 	return &HTTPSender{
-		addr:   DefaultURL,
+		addr:   endpoint.String(),
 		client: &http.Client{},
+		debug:  debug,
 	}
 }
 
@@ -29,6 +44,10 @@ func (h *HTTPSender) Send(data []ErrorReport) error {
 		reqBytes, err := rep.MarshalJSON()
 		if err != nil {
 			return err
+		}
+
+		if h.debug {
+			log.Printf("%s\n", reqBytes)
 		}
 
 		req, err := http.NewRequest(http.MethodPost, h.addr, bytes.NewBuffer(reqBytes))
@@ -48,19 +67,13 @@ func (h *HTTPSender) Send(data []ErrorReport) error {
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("\n\tstatus code: %d,\n\t body: %s\n\t payload: %s", resp.StatusCode, string(respBytes), string(reqBytes))
+			err = fmt.Errorf("status code: %d,\nbody: %s,\npayload: %s", resp.StatusCode, string(respBytes), string(reqBytes))
+			if h.debug {
+				log.Printf("%s", err)
+			}
+			return err
 		}
 	}
 
 	return nil
-}
-
-// SetURL sets addr field for setURL instance.
-func (h *HTTPSender) setURL(hawkURL string) {
-	h.addr = hawkURL
-}
-
-// GetURL returns addr.
-func (h *HTTPSender) getURL() string {
-	return h.addr
 }
