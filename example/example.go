@@ -14,12 +14,13 @@ import (
 
 func main() {
 	options := hawk.DefaultHawkOptions()
-	options.MaxInterval = 1 * time.Second
-	options.AccessToken = "<TOKEN>"
+	options.AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0SWQiOiI1ZjcwN2QwZDRjYjBmODVmYWFhYzIzY2YiLCJpYXQiOjE2MDEyMDc1NjV9.lC9zU-FkwKEzzgjaZsowwgS5VoyRjntc_q548mDur0Y"
 	options.URL = "https://test.stage-k1.hawk.so"
-	options.Release = "v1.3.3"
+	options.Debug = true
+	options.Transport = hawk.HTTPTransport{}
+	options.AffectedUser = hawk.AffectedUser{Id: "01", Name: "default user"}
 
-	catcher, err := hawk.New(options, hawk.NewHTTPSender())
+	catcher, err := hawk.New(options)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,7 +28,13 @@ func main() {
 	go catcher.Run()
 	defer catcher.Stop()
 
-	err = catcher.Catch(fmt.Errorf("exception NEW"),
+	err = catcher.Catch(fmt.Errorf("manual exception without context"))
+	if err != nil {
+		catcher.Stop()
+		log.Fatal(err)
+	}
+
+	err = catcher.Catch(fmt.Errorf("manual exception with context"),
 		hawk.WithContext(struct{ Timestamp string }{Timestamp: strconv.Itoa(int(time.Now().Unix()))}),
 		hawk.WithUser(hawk.AffectedUser{Id: "uid", Name: "N0str"}),
 		hawk.WithRelease("v-3.7"),
@@ -36,6 +43,10 @@ func main() {
 		catcher.Stop()
 		log.Fatal(err)
 	}
+
+	// panic
+	var s []interface{}
+	fmt.Println(s[10])
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)

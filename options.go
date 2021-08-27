@@ -22,6 +22,10 @@ type HawkOptions struct {
 	URL string
 	// Release is the custom application version
 	Release string
+	// Whether to log debug messages
+	Debug        bool
+	Transport    Transport
+	AffectedUser AffectedUser
 }
 
 func DefaultHawkOptions() HawkOptions {
@@ -31,7 +35,10 @@ func DefaultHawkOptions() HawkOptions {
 		SourceCodeEnabled: false,
 		SourceCodeLines:   DefaultSourceCodeLines,
 		AccessToken:       "",
-		URL:               "",
+		URL:               "https://k1.hawk.so/",
+		Debug:             false,
+		Transport:         HTTPTransport{},
+		AffectedUser:      AffectedUser{},
 	}
 }
 

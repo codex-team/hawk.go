@@ -4,8 +4,7 @@ package hawk
 type Sender interface {
 	// Send sends error reports to Hawk.
 	Send([]ErrorReport) error
-	// setURL is used to set custom URL.
-	setURL(string)
-	// GetURL returns Sender's URL.
-	getURL() string
+}
+
+type Transport interface {
 }

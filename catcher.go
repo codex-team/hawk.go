@@ -13,7 +13,7 @@ const (
 	// CatcherType is the type of this Catcher.
 	CatcherType = "errors/golang"
 	// DefaultMaxBulkSize is default max amount of errors that can be sent at once.
-	DefaultMaxBulkSize = 32
+	DefaultMaxBulkSize = 1
 	// DefaultMaxInterval is default max time interval to wait for errors before sending them.
 	DefaultMaxInterval = 5 * time.Second
 	// DefaultSourceCodeLines is default number of source code lines before and
@@ -40,10 +40,27 @@ type Catcher struct {
 }
 
 // New returns new Catcher instance with provided access token and default URL.
-func New(options HawkOptions, s Sender) (*Catcher, error) {
+func New(options HawkOptions) (*Catcher, error) {
 	err := checkAccessToken(options.AccessToken)
 	if err != nil {
 		return nil, err
+	}
+
+	// check URL
+	_, err = url.Parse(options.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	// choose and init an appropriate transport
+	var sender Sender
+	switch options.Transport.(type) {
+	case HTTPTransport:
+		sender = NewHTTPSender(options.URL, options.Debug)
+	case WebsocketTransport:
+		sender = NewWebsocketSender(options.URL)
+	default:
+		return nil, fmt.Errorf("Invalid transport value: %s", options.Transport)
 	}
 
 	catcher := &Catcher{
@@ -52,12 +69,7 @@ func New(options HawkOptions, s Sender) (*Catcher, error) {
 		errorsCh:     make(chan ErrorReport),
 		done:         make(chan error),
 		timeout:      make(chan bool, 1),
-		sender:       s,
-	}
-
-	err = catcher.SetURL(options.URL)
-	if err != nil {
-		return nil, err
+		sender:       sender,
 	}
 
 	return catcher, nil
@@ -113,44 +125,15 @@ func (c *Catcher) Stop() {
 	if r := recover(); r != nil {
 		c.processRecover(r)
 	}
-	close(c.done)
+	c.done <- errors.New("stop")
 }
 
 func (c *Catcher) processRecover(r interface{}) {
-	c.errorsCh <- ErrorReport{
-		Token:       c.options.AccessToken,
-		CatcherType: CatcherType,
-		Payload: Payload{
-			Title:          fmt.Sprintf("%s", r),
-			Type:           DefaultType,
-			Release:        c.options.Release,
-			CatcherVersion: VERSION,
-		},
-	}
+	_ = c.Catch(fmt.Errorf("%s", r))
 }
 
 func (c *Catcher) Recover() {
 	if r := recover(); r != nil {
 		c.processRecover(r)
 	}
-}
-
-// SetURL sets hawkURL field for Catcher instance.
-func (c *Catcher) SetURL(hawkURL string) error {
-	if hawkURL == "" {
-		return ErrEmptyURL
-	}
-
-	_, err := url.Parse(hawkURL)
-	if err != nil {
-		return err
-	}
-	c.sender.setURL(hawkURL)
-
-	return nil
-}
-
-// GetURL returns Sender's URL.
-func (c *Catcher) GetURL() string {
-	return c.sender.getURL()
 }

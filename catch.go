@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"strings"
 )
 
 // ErrEmptyBacktrace is returned if getBacktrace collected empty backtrace.
@@ -29,9 +28,9 @@ func getBacktrace(toSkip int) []Backtrace {
 	frames := runtime.CallersFrames(pc[:numFrames])
 
 	for frame, more := frames.Next(); more; frame, more = frames.Next() {
-		if strings.Contains(frame.File, "runtime") {
-			break
-		}
+		//if strings.Contains(frame.File, "runtime") {
+		//	//break
+		//}
 
 		res = append(res, Backtrace{
 			File:     frame.File,
@@ -85,7 +84,7 @@ func (c *Catcher) Catch(err error, opts ...HawkAdditionalParams) error {
 
 	h := &Payload{
 		Title:          err.Error(),
-		Type:           DefaultType,
+		Type:           ManualType,
 		CatcherVersion: VERSION,
 	}
 
@@ -101,13 +100,17 @@ func (c *Catcher) Catch(err error, opts ...HawkAdditionalParams) error {
 
 // catchWithPayload creates ErrorReport for provided error, collects backtrace and sends data to Hawk.
 func (c *Catcher) catchWithPayload(payload Payload) error {
+	if payload.User.isEmpty() {
+		payload.User = c.options.AffectedUser
+	}
+
 	report := ErrorReport{
 		Token:       c.options.AccessToken,
 		CatcherType: CatcherType,
 		Payload:     payload,
 	}
 
-	report.Payload.Backtrace = getBacktrace(1)
+	report.Payload.Backtrace = getBacktrace(2)
 	if len(report.Payload.Backtrace) == 0 {
 		return ErrEmptyBacktrace
 	}

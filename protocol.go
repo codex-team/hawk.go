@@ -3,6 +3,7 @@ package hawk
 import "github.com/mailru/easyjson"
 
 const DefaultType = "error"
+const ManualType = "manual"
 
 // ErrorReport is a report about an error that is sent to Hawk.
 // easyjson:json
@@ -26,6 +27,10 @@ type AffectedUser struct {
 	URL string `json:"url"`
 	// User's public picture
 	Image string `json:"image"`
+}
+
+func (au *AffectedUser) isEmpty() bool {
+	return au.Id == "" && au.Name == "" && au.URL == "" && au.Image == ""
 }
 
 // Payload is the information about the error.
