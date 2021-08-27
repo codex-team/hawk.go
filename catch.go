@@ -103,7 +103,7 @@ func (c *Catcher) catchWithPayload(payload Payload) error {
 	}
 
 	// add integrationID to context if Debug is enabled
-	if c.options.Debug {
+	if c.integrationID != "" && c.options.Debug {
 		var context map[string]interface{}
 		if payload.Context == nil {
 			payload.Context = easyjson.RawMessage(`{}`)
