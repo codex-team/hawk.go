@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 // HTTPSender is a Sender implementation thar sends errors via http.Client.
@@ -23,8 +24,15 @@ type HTTPTransport struct {
 
 // NewHTTPSender returns new HTTPSender instant with default address.
 func NewHTTPSender(addr string, debug bool) Sender {
+	endpoint := url.URL{
+		Scheme: "https",
+		Host:   addr,
+	}
+	if debug {
+		log.Printf("Init Hawk sender: %s", endpoint.String())
+	}
 	return &HTTPSender{
-		addr:   addr,
+		addr:   endpoint.String(),
 		client: &http.Client{},
 		debug:  debug,
 	}

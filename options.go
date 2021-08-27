@@ -18,14 +18,18 @@ type HawkOptions struct {
 	SourceCodeLines int
 	// accessToken is the Hawk access token.
 	AccessToken string
-	// URL is the Hawk endpoint
-	URL string
+	// Domain is the Hawk base endpoint
+	Domain string
 	// Release is the custom application version
 	Release string
 	// Whether to log debug messages
-	Debug        bool
-	Transport    Transport
+	Debug bool
+	// Transport for error sending: HTTPTransport, WebsocketTransport
+	Transport Transport
+	// Global affected user
 	AffectedUser AffectedUser
+	// Full URL of the Hawk endpoint
+	FullURL string
 }
 
 func DefaultHawkOptions() HawkOptions {
@@ -35,7 +39,7 @@ func DefaultHawkOptions() HawkOptions {
 		SourceCodeEnabled: false,
 		SourceCodeLines:   DefaultSourceCodeLines,
 		AccessToken:       "",
-		URL:               "https://k1.hawk.so/",
+		Domain:            "k1.hawk.so",
 		Debug:             false,
 		Transport:         HTTPTransport{},
 		AffectedUser:      AffectedUser{},

@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 	"runtime"
+
+	"github.com/mailru/easyjson"
 )
 
 // ErrEmptyBacktrace is returned if getBacktrace collected empty backtrace.
@@ -28,10 +30,6 @@ func getBacktrace(toSkip int) []Backtrace {
 	frames := runtime.CallersFrames(pc[:numFrames])
 
 	for frame, more := frames.Next(); more; frame, more = frames.Next() {
-		//if strings.Contains(frame.File, "runtime") {
-		//	//break
-		//}
-
 		res = append(res, Backtrace{
 			File:     frame.File,
 			Line:     frame.Line,
@@ -102,6 +100,22 @@ func (c *Catcher) Catch(err error, opts ...HawkAdditionalParams) error {
 func (c *Catcher) catchWithPayload(payload Payload) error {
 	if payload.User.isEmpty() {
 		payload.User = c.options.AffectedUser
+	}
+
+	// add integrationID to context if Debug is enabled
+	if c.options.Debug {
+		var context map[string]interface{}
+		if payload.Context == nil {
+			payload.Context = easyjson.RawMessage(`{}`)
+		}
+		err := json.Unmarshal(payload.Context, &context)
+		if err == nil {
+			context["integrationID"] = c.integrationID
+			newContext, err := json.Marshal(context)
+			if err == nil {
+				payload.Context = newContext
+			}
+		}
 	}
 
 	report := ErrorReport{

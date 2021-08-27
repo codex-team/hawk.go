@@ -14,8 +14,8 @@ import (
 
 func main() {
 	options := hawk.DefaultHawkOptions()
-	options.AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0SWQiOiI1ZjcwN2QwZDRjYjBmODVmYWFhYzIzY2YiLCJpYXQiOjE2MDEyMDc1NjV9.lC9zU-FkwKEzzgjaZsowwgS5VoyRjntc_q548mDur0Y"
-	options.URL = "https://test.stage-k1.hawk.so"
+	options.AccessToken = "<TOKEN>"
+	options.Domain = "stage-k1.hawk.so"
 	options.Debug = true
 	options.Transport = hawk.HTTPTransport{}
 	options.AffectedUser = hawk.AffectedUser{Id: "01", Name: "default user"}

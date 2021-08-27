@@ -1,9 +1,10 @@
 package hawk
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"time"
 )
 
@@ -37,48 +38,66 @@ type Catcher struct {
 	timeout chan bool
 	// sender is Sender implementation that is used by Catcher to send errors to Hawk.
 	sender Sender
+	// integrationID is a unique project identifier
+	integrationID string
 }
 
 // New returns new Catcher instance with provided access token and default URL.
 func New(options HawkOptions) (*Catcher, error) {
-	err := checkAccessToken(options.AccessToken)
-	if err != nil {
-		return nil, err
+	url := options.Domain
+
+	integrationID := getIntegrationID(options.AccessToken)
+	if integrationID != "" {
+		url = fmt.Sprintf("%s.%s", integrationID, options.Domain)
 	}
 
-	// check URL
-	_, err = url.Parse(options.URL)
-	if err != nil {
-		return nil, err
+	if options.FullURL != "" {
+		url = options.FullURL
 	}
 
 	// choose and init an appropriate transport
 	var sender Sender
 	switch options.Transport.(type) {
 	case HTTPTransport:
-		sender = NewHTTPSender(options.URL, options.Debug)
+		sender = NewHTTPSender(url, options.Debug)
 	case WebsocketTransport:
-		sender = NewWebsocketSender(options.URL)
+		sender = NewWebsocketSender(url)
 	default:
 		return nil, fmt.Errorf("Invalid transport value: %s", options.Transport)
 	}
 
 	catcher := &Catcher{
-		options:      options,
-		lastSendTime: time.Now(),
-		errorsCh:     make(chan ErrorReport),
-		done:         make(chan error),
-		timeout:      make(chan bool, 1),
-		sender:       sender,
+		options:       options,
+		lastSendTime:  time.Now(),
+		errorsCh:      make(chan ErrorReport),
+		done:          make(chan error),
+		timeout:       make(chan bool, 1),
+		sender:        sender,
+		integrationID: integrationID,
 	}
 
 	return catcher, nil
 }
 
-// checkAccessToken validates access token.
-func checkAccessToken(accessToken string) error {
-	// TODO: implement token format checking
-	return nil
+// getIntegrationID validates access token and returns integration ID
+func getIntegrationID(accessToken string) string {
+	type HawkAccessToken struct {
+		IntegrationId string `json:"integrationId"`
+		Secret        string `json:"secret"`
+	}
+
+	var unpackedToken []byte
+	unpackedToken, err := base64.StdEncoding.DecodeString(accessToken)
+	if err != nil {
+		return ""
+	}
+	var parsedToken HawkAccessToken
+	err = json.Unmarshal(unpackedToken, &parsedToken)
+	if err != nil {
+		return ""
+	}
+
+	return parsedToken.IntegrationId
 }
 
 // Run starts Catcher's main work to wait for errors.
