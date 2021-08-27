@@ -101,6 +101,9 @@ func (c *Catcher) catchWithPayload(payload Payload) error {
 	if payload.User.isEmpty() {
 		payload.User = c.options.AffectedUser
 	}
+	if payload.Release == "" {
+		payload.Release = c.options.Release
+	}
 
 	// add integrationID to context if Debug is enabled
 	if c.integrationID != "" && c.options.Debug {
