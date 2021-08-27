@@ -119,10 +119,7 @@ func (c *Catcher) Run() error {
 		case report := <-c.errorsCh:
 			buffer = append(buffer, report)
 			if len(buffer) == c.options.MaxBulkSize {
-				err := c.sender.Send(buffer)
-				if err != nil {
-					return fmt.Errorf("catcher exited with error: %w", err)
-				}
+				_ = c.sender.Send(buffer)
 				buffer = buffer[:0]
 			} else {
 				// initiate a new timer if not yet
@@ -130,10 +127,7 @@ func (c *Catcher) Run() error {
 			}
 		// send all errors from a buffer
 		case <-c.timeout:
-			err := c.sender.Send(buffer)
-			if err != nil {
-				return fmt.Errorf("catcher exited with error: %w", err)
-			}
+			_ = c.sender.Send(buffer)
 			buffer = buffer[:0]
 		}
 	}
