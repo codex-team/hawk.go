@@ -15,7 +15,7 @@ import (
 func main() {
 	options := hawk.DefaultHawkOptions()
 	options.AccessToken = "<TOKEN>"
-	options.Domain = "stage-k1.hawk.so"
+	options.Domain = "k1.hawk.so"
 	options.Debug = true
 	options.Transport = hawk.HTTPTransport{}
 	options.AffectedUser = hawk.AffectedUser{Id: "01", Name: "default user"}
@@ -30,7 +30,6 @@ func main() {
 
 	err = catcher.Catch(fmt.Errorf("manual exception without context"))
 	if err != nil {
-		catcher.Stop()
 		log.Fatal(err)
 	}
 
@@ -40,7 +39,6 @@ func main() {
 		hawk.WithRelease("v-3.7"),
 	)
 	if err != nil {
-		catcher.Stop()
 		log.Fatal(err)
 	}
 
