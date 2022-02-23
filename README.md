@@ -7,7 +7,7 @@ Golang errors catcher for [Hawk.so](https://hawk.so)
 ### Go Get
 
 ```golang
-go get https://github.com/codex-team/hawk.go
+go get github.com/codex-team/hawk.go
 ```
 
 ## Usage
